@@ -413,7 +413,7 @@
 
 <script>
 // ========== PASSWORD GATE ==========
-const HASH = '170bf0a92cbce0267b9e2e247279a932fe31fc224f4759d062066ce0ccd704e8';
+const HASH = 'c10981d29d5ce8fbfb41bfccf3f1df6676e752bd2f9a1a2ccbe25a1c750294b9';
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
