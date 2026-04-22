@@ -3,10 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FrontrowMD â Business Development Dashboard</title>
+<title>FrontrowMD — Business Development Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
+  /* Password Gate */
+  .auth-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #1a1a2e; display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  .auth-box {
+    background: #16213e; border: 1px solid #2a3a5c; border-radius: 12px;
+    padding: 40px 36px; text-align: center; max-width: 380px; width: 90%;
+  }
+  .auth-box h2 { color: #4a9eff; font-size: 22px; margin-bottom: 6px; }
+  .auth-box p { color: #9a9ab8; font-size: 13px; margin-bottom: 24px; }
+  .auth-box input[type="password"] {
+    width: 100%; padding: 10px 14px; background: #253352; border: 1px solid #2a3a5c;
+    color: #e8e8f0; border-radius: 6px; font-size: 14px; outline: none;
+    font-family: inherit; margin-bottom: 14px; box-sizing: border-box;
+  }
+  .auth-box input[type="password"]:focus { border-color: #4a9eff; }
+  .auth-box button {
+    width: 100%; padding: 10px; background: #4a9eff; color: #fff; border: none;
+    border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: inherit;
+  }
+  .auth-box button:hover { background: #3b8de6; }
+  .auth-error { color: #ec4899; font-size: 12px; margin-top: 8px; display: none; }
+  .dashboard-hidden { display: none; }
+
   :root {
     --bg-primary: #1a1a2e;
     --bg-secondary: #16213e;
@@ -275,13 +302,26 @@
 </head>
 <body>
 
-<div class="dashboard-container">
+<!-- Password Gate -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>FrontrowMD</h2>
+    <p>Business Development Dashboard</p>
+    <form id="authForm" onsubmit="return checkAuth()">
+      <input type="password" id="authPassword" placeholder="Enter password" autofocus>
+      <button type="submit">Access Dashboard</button>
+      <div class="auth-error" id="authError">Incorrect password</div>
+    </form>
+  </div>
+</div>
+
+<div class="dashboard-container dashboard-hidden" id="dashboardMain">
 
   <!-- Header -->
   <div class="header">
     <div class="header-left">
       <h1><span>FrontrowMD</span> Business Development</h1>
-      <p>Pipeline and conversion metrics â updated __UPDATE_DATE__</p>
+      <p>Pipeline and conversion metrics — updated __UPDATE_DATE__</p>
     </div>
   </div>
 
@@ -308,27 +348,27 @@
   <div class="kpi-grid">
     <div class="kpi-card blue">
       <div class="kpi-label">Total Demos Booked</div>
-      <div class="kpi-value" id="kpiDemos">â</div>
+      <div class="kpi-value" id="kpiDemos">—</div>
       <div class="kpi-sub" id="kpiDemosSub"></div>
     </div>
     <div class="kpi-card green">
       <div class="kpi-label">Total Deals Signed</div>
-      <div class="kpi-value" id="kpiDeals">â</div>
+      <div class="kpi-value" id="kpiDeals">—</div>
       <div class="kpi-sub" id="kpiDealsSub"></div>
     </div>
     <div class="kpi-card purple">
       <div class="kpi-label">Conversion Rate</div>
-      <div class="kpi-value" id="kpiConversion">â</div>
+      <div class="kpi-value" id="kpiConversion">—</div>
       <div class="kpi-sub">Deals / Demos</div>
     </div>
     <div class="kpi-card orange">
       <div class="kpi-label">Avg Demos / Day</div>
-      <div class="kpi-value" id="kpiAvgDemos">â</div>
+      <div class="kpi-value" id="kpiAvgDemos">—</div>
       <div class="kpi-sub" id="kpiAvgDemosSub"></div>
     </div>
     <div class="kpi-card pink">
       <div class="kpi-label">Avg Deals / Day</div>
-      <div class="kpi-value" id="kpiAvgDeals">â</div>
+      <div class="kpi-value" id="kpiAvgDeals">—</div>
       <div class="kpi-sub" id="kpiAvgDealsSub"></div>
     </div>
   </div>
@@ -368,11 +408,36 @@
     </table>
   </div>
 
-  <div class="footer">FrontrowMD Dashboard â Data as of __UPDATE_DATE__</div>
+  <div class="footer">FrontrowMD Dashboard — Data as of __UPDATE_DATE__</div>
 </div>
 
 <script>
-// ========== EMBEDDED DATA ==========
+// ========== PASSWORD GATE ==========
+const HASH = '170bf0a92cbce0267b9e2e247279a932fe31fc224f4759d062066ce0ccd704e8';
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function checkAuth() {
+  const pw = document.getElementById('authPassword').value;
+  const hash = await sha256(pw);
+  if (hash === HASH) {
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('dashboardMain').classList.remove('dashboard-hidden');
+    sessionStorage.setItem('bd_auth', '1');
+    return false;
+  }
+  document.getElementById('authError').style.display = 'block';
+  return false;
+}
+// Auto-unlock if already authenticated this session
+if (sessionStorage.getItem('bd_auth') === '1') {
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('dashboardMain').classList.remove('dashboard-hidden');
+}
+</script>
+<script>
+// ========== EMBEDDDD DATA ==========
 const demosByDay = __DEMOS_DATA__;
 
 const dealsByDay = __DEALS_DATA__;
@@ -424,7 +489,7 @@ function daysInMonthRange(ym, startStr, endStr) {
   return daysBetween(effStart, effEnd);
 }
 
-// ========== CHART SETUP ==========
+// ========== CHART SETUP!==========
 const commonChartOptions = (color) => ({
   responsive: true,
   maintainAspectRatio: false,
@@ -577,7 +642,7 @@ function updateDashboard() {
       .filter(([d]) => getMonthKey(d) === ym)
       .reduce((s, [, v]) => s + v, 0);
     const mDays = daysInMonthRange(ym, startStr, endStr);
-    const mConv = mDemos > 0 ? ((mDeals / mDemos) * 100).toFixed(1) + '%' : 'â';
+    const mConv = mDemos > 0 ? ((mDeals / mDemos) * 100).toFixed(1) + '%' : '—';
     const mAvgD = (mDemos / mDays).toFixed(1);
     const mAvgDl = (mDeals / mDays).toFixed(2);
 
@@ -596,7 +661,7 @@ function updateDashboard() {
 
   document.getElementById('monthlyBody').innerHTML = tableHTML;
 
-  const footConv = totalDemosTable > 0 ? ((totalDealsTable / totalDemosTable) * 100).toFixed(1) + '%' : 'â';
+  const footConv = totalDemosTable > 0 ? ((totalDealsTable / totalDemosTable) * 100).toFixed(1) + '%' : '—';
   document.getElementById('monthlyFoot').innerHTML =
     '<tr>' +
     '<td>Total</td>' +
