@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FrontrowMD â Business Development Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #1f2b47;
+    --bg-input: #253352;
+    --text-primary: #e8e8f0;
+    --text-secondary: #9a9ab8;
+    --text-muted: #6a6a8a;
+    --accent-blue: #4a9eff;
+    --accent-green: #00d68f;
+    --accent-purple: #a855f7;
+    --accent-orange: #f59e0b;
+    --accent-pink: #ec4899;
+    --border-color: #2a3a5c;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 32px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-left h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+  }
+  .header-left h1 span { color: var(--accent-blue); }
+  .header-left p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-bar label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .filter-bar input[type="date"] {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .filter-bar input[type="date"]:focus {
+    border-color: var(--accent-blue);
+  }
+  .filter-bar input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+  .preset-buttons {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+    flex-wrap: wrap;
+  }
+  .preset-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .preset-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+  }
+  .preset-btn.active {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: #fff;
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+  }
+  .kpi-card.blue::before { background: var(--accent-blue); }
+  .kpi-card.green::before { background: var(--accent-green); }
+  .kpi-card.purple::before { background: var(--accent-purple); }
+  .kpi-card.orange::before { background: var(--accent-orange); }
+  .kpi-card.pink::before { background: var(--accent-pink); }
+
+  .kpi-card .kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .kpi-card .kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+  .kpi-card.blue .kpi-value { color: var(--accent-blue); }
+  .kpi-card.green .kpi-value { color: var(--accent-green); }
+  .kpi-card.purple .kpi-value { color: var(--accent-purple); }
+  .kpi-card.orange .kpi-value { color: var(--accent-orange); }
+  .kpi-card.pink .kpi-value { color: var(--accent-pink); }
+
+  .kpi-card .kpi-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Chart containers */
+  .chart-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .chart-wrapper h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+  .chart-wrapper h2 .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .badge-blue { background: rgba(74,158,255,0.15); color: var(--accent-blue); }
+  .badge-green { background: rgba(0,214,143,0.15); color: var(--accent-green); }
+
+  .chart-canvas-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+  }
+
+  /* Monthly table */
+  .table-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .table-wrapper h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(74,158,255,0.04); }
+  .td-blue { color: var(--accent-blue); font-weight: 600; }
+  .td-green { color: var(--accent-green); font-weight: 600; }
+  .td-purple { color: var(--accent-purple); font-weight: 600; }
+  tfoot td {
+    padding: 12px 14px;
+    font-weight: 700;
+    border-top: 2px solid var(--border-color);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 16px 0 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-container { padding: 16px; }
+    .header h1 { font-size: 20px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .chart-canvas-container { height: 220px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1><span>FrontrowMD</span> Business Development</h1>
+      <p>Pipeline and conversion metrics â updated April 21, 2026</p>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <label>Date Range</label>
+    <input type="date" id="startDate">
+    <span style="color:var(--text-muted)">to</span>
+    <input type="date" id="endDate">
+    <div class="preset-buttons">
+      <button class="preset-btn" data-preset="7d">Last 7 Days</button>
+      <button class="preset-btn" data-preset="wtd">WTD</button>
+      <button class="preset-btn" data-preset="mtd">MTD</button>
+      <button class="preset-btn" data-preset="30d">Last 30 Days</button>
+      <button class="preset-btn" data-preset="prevmonth">Prev Month</button>
+      <button class="preset-btn" data-preset="90d">Last 90 Days</button>
+      <button class="preset-btn" data-preset="6m">Last 6 Months</button>
+      <button class="preset-btn" data-preset="ytd">YTD</button>
+      <button class="preset-btn active" data-preset="all">All Time</button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total Demos Booked</div>
+      <div class="kpi-value" id="kpiDemos">â</div>
+      <div class="kpi-sub" id="kpiDemosSub"></div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Total Deals Signed</div>
+      <div class="kpi-value" id="kpiDeals">â</div>
+      <div class="kpi-sub" id="kpiDealsSub"></div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-value" id="kpiConversion">â</div>
+      <div class="kpi-sub">Deals / Demos</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Avg Demos / Day</div>
+      <div class="kpi-value" id="kpiAvgDemos">â</div>
+      <div class="kpi-sub" id="kpiAvgDemosSub"></div>
+    </div>
+    <div class="kpi-card pink">
+      <div class="kpi-label">Avg Deals / Day</div>
+      <div class="kpi-value" id="kpiAvgDeals">â</div>
+      <div class="kpi-sub" id="kpiAvgDealsSub"></div>
+    </div>
+  </div>
+
+  <!-- Demos Chart -->
+  <div class="chart-wrapper">
+    <h2>Demos Booked per Day <span class="badge badge-blue" id="demosChartBadge"></span></h2>
+    <div class="chart-canvas-container">
+      <canvas id="demosChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Deals Chart -->
+  <div class="chart-wrapper">
+    <h2>Deals Signed per Day <span class="badge badge-green" id="dealsChartBadge"></span></h2>
+    <div class="chart-canvas-container">
+      <canvas id="dealsChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Monthly Rollup Table -->
+  <div class="table-wrapper">
+    <h2>Monthly Rollup</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Demos Booked</th>
+          <th>Deals Signed</th>
+          <th>Conversion %</th>
+          <th>Avg Demos/Day</th>
+          <th>Avg Deals/Day</th>
+        </tr>
+      </thead>
+      <tbody id="monthlyBody"></tbody>
+      <tfoot id="monthlyFoot"></tfoot>
+    </table>
+  </div>
+
+  <div class="footer">FrontrowMD Dashboard â Data as of April 21, 2026</div>
+</div>
+
+<script>
+// ========== EMBEDDED DATA ==========
+const demosByDay = {"2025-05-03":2,"2025-05-05":3,"2025-05-06":3,"2025-05-07":6,"2025-05-08":4,"2025-05-09":12,"2025-05-10":1,"2025-05-12":6,"2025-05-13":10,"2025-05-14":3,"2025-05-15":3,"2025-05-16":4,"2025-05-17":1,"2025-05-19":8,"2025-05-20":8,"2025-05-21":11,"2025-05-22":10,"2025-05-23":5,"2025-05-24":2,"2025-05-25":2,"2025-05-26":4,"2025-05-27":7,"2025-05-28":4,"2025-05-29":13,"2025-05-30":2,"2025-06-01":1,"2025-06-02":9,"2025-06-03":6,"2025-06-04":6,"2025-06-05":7,"2025-06-06":11,"2025-06-07":1,"2025-06-08":1,"2025-06-09":4,"2025-06-10":4,"2025-06-11":8,"2025-06-12":4,"2025-06-13":7,"2025-06-14":1,"2025-06-15":1,"2025-06-16":4,"2025-06-17":7,"2025-06-18":5,"2025-06-19":2,"2025-06-20":5,"2025-06-22":3,"2025-06-23":7,"2025-06-24":7,"2025-06-25":10,"2025-06-26":5,"2025-06-28":1,"2025-06-29":2,"2025-06-30":7,"2025-07-01":2,"2025-07-02":3,"2025-07-03":8,"2025-07-04":2,"2025-07-07":3,"2025-07-08":3,"2025-07-09":8,"2025-07-10":5,"2025-07-11":2,"2025-07-13":1,"2025-07-14":7,"2025-07-15":3,"2025-07-16":2,"2025-07-17":5,"2025-07-18":4,"2025-07-20":4,"2025-07-21":5,"2025-07-22":5,"2025-07-23":2,"2025-07-24":5,"2025-07-25":3,"2025-07-26":1,"2025-07-27":1,"2025-07-28":6,"2025-07-29":6,"2025-07-30":5,"2025-07-31":3,"2025-08-01":2,"2025-08-04":4,"2025-08-05":3,"2025-08-06":5,"2025-08-07":5,"2025-08-04":1,"2025-08-10":1,"2025-08-11":8,"2025-08-12":7,"2025-08-13":2,"2025-08-14":3,"2025-08-17":2,"2025-08-18":8,"2025-08-19":7,"2025-08-20":6,"2025-08-21":4,"2025-08-22":3,"2025-08-23":1,"2025-08-25":8,"2025-08-26":5,"2025-08-27":7,"2025-08-28":5,"2025-08-29":2,"2025-04-30":5,"2025-04-31":2,"2025-09-01":1,"2025-09-02":9,"2025-09-03":8,"2025-09-04":6,"2025-09-05":2,"2025-09-07":1,"2025-09-04":4,"2025-09-09":5,"2025-09-10":4,"2025-09-11":1,"2025-09-12":2,"2025-09-14":4,"2025-09-15":1,"2025-09-16":6,"2025-09-17":7,"2025-09-14":4,"2025-09-19":4,"2025-09-20":1,"2025-09-21":3,"2025-09-22":10,"2025-09-23":7,"2025-09-24":5,"2025-09-25":1,"2025-09-26":6,"2025-09-27":2,"2025-09-28":1,"2025-09-29":10,"2025-09-30":2,"2025-10-01":6,"2025-10-02":5,"2025-10-03":5,"2025-10-04":2,"2025-10-05":1,"2025-10-06":4,"2025-10-07":5,"2025-10-08":2,"2025-10-09":3,"2025-10-10":3,"2025-10-11":2,"2025-10-13":6,"2025-10-14":4,"2025-10-15":7,"2025-10-16":4,"2025-10-17":9,"2025-10-18":2,"2025-10-20":2,"2025-10-21":3,"2025-10-22":6,"2025-10-23":4,"2025-10-24":4,"2025-10-25":1,"2025-10-26":1,"2025-10-27":5,"2025-10-28":5,"2025-10-29":3,"2025-10-30":5,"2025-10-31":6,"2025-11-01":2,"2025-11-02":5,"2025-11-03":8,"2025-11-04":17,"2025-11-05":13,"2025-11-06":16,"2025-11-07":10,"2025-11-08":7,"2025-11-09":8,"2025-11-10":9,"2025-11-11":9,"2025-11-12":7,"2025-11-13":9,"2025-11-14":12,"2025-11-15":1,"2025-11-16":2,"2025-11-17":9,"2025-11-18":16,"2025-11-19":13,"2025-11-20":11,"2025-11-21":9,"2025-11-22":2,"2025-11-23":8,"2025-11-24":11,"2025-11-25":4,"2025-11-26":10,"2025-11-27":6,"2025-11-28":11,"2025-11-29":3,"2025-11-30":7,"2025-12-01":8,"2025-12-02":8,"2025-12-03":15,"2025-12-04":18,"2025-12-05":20,"2025-12-06":5,"2025-12-07":12,"2025-12-08":14,"2025-12-09":10,"2025-12-10":2,"2025-12-11":9,"2025-12-12":9,"2025-12-13":7,"2025-12-15":6,"2025-12-16":10,"2025-12-17":10,"2025-12-18":10,"2025-12-19":8,"2025-12-20":4,"2025-12-21":9,"2025-12-22":16,"2025-12-23":12,"2025-12-24":10,"2025-12-25":8,"2025-12-26":6,"2025-12-27":5,"2025-12-28":6,"2025-12-29":9,"2025-12-30":8,"2025-12-31":3,"2026-01-01":5,"2026-01-02":10,"2026-01-03":6,"2026-01-04":5,"2026-01-05":15,"2026-01-06":11,"2026-01-07":9,"2026-01-08":7,"2026-01-09":14,"2026-01-10":7,"2026-01-11":3,"2026-01-12":11,"2026-01-13":13,"2026-01-14":6,"2026-01-15":9,"2026-01-16":5,"2026-01-17":8,"2026-01-18":4,"2026-01-19":13,"2026-01-20":21,"2026-01-21":15,"2026-01-22":17,"2026-01-23":27,"2026-01-24":14,"2026-01-25":5,"2026-01-26":14,"2026-01-27":14,"2026-01-28":12,"2026-01-29":16,"2026-01-30":7,"2026-01-31":1,"2026-02-01":1,"2026-02-02":40,"2026-02-03":12,"2026-02-04":1,"2026-02-05":16,"2026-02-06":8,"2026-02-07":6,"2026-02-08":9,"2026-02-09":13,"2026-02-10":18,"2026-02-11":12,"2026-02-12":15,"2026-02-13":16,"2026-02-14":5,"2026-02-15":9,"2026-02-16":22,"2026-02-17":14,"2026-02-18":15,"2026-02-19":15,"2026-02-20":14,"2026-02-21":5,"2026-02-22":16,"2026-02-23":16,"2026-02-24":17,"2026-02-25":8,"2026-02-26":16,"2026-02-27":22,"2026-02-28":6,"2026-03-01":7,"2026-03-02":17,"2026-03-03":12,"2026-03-04":11,"2026-03-05":4,"2026-03-06":13,"2026-03-07":7,"2026-03-08":5,"2026-03-09":10,"2026-03-10":13,"2026-03-11":13,"2026-03-12":9,"2026-03-13":15,"2026-03-14":7,"2026-03-15":4,"2026-03-16":18,"2026-03-17":21,"2026-03-18":31,"2026-03-19":21,"2026-03-20":25,"2026-03-21":16,"2026-03-22":20,"2026-03-23":20,"2026-03-24":12,"2026-03-25":13,"2026-03-26":24,"2026-03-27":14,"2026-03-28":12,"2026-03-29":8,"2026-03-30":19,"2026-03-31":21,"2026-04-01":10,"2026-04-02":35,"2026-04-03":25,"2026-04-04":21,"2026-04-05":20,"2026-04-06":21,"2026-04-07":30,"2026-04-08":29,"2026-04-09":28,"2026-04-10":22,"2026-04-11":22,"2026-04-12":22,"2026-04-13":24,"2026-04-14":30,"2026-04-15":26,"2026-04-16":34,"2026-04-17":19,"2026-04-18":11,"2026-04-19":22,"2026-04-20":29,"2026-04-21":23};
+
+const dealsByDay = {"2024-01-03":2,"2024-01-14":1,"2024-01-15":1,"2024-01-25":1,"2024-02-01":1,"2024-02-05":4,"2024-02-06":3,"2024-02-07":2,"2024-02-09":2,"2024-02-12":3,"2024-02-13":1,"2024-02-14":1,"2024-02-15":1,"2024-02-16":1,"2024-02-20":2,"2024-02-21":2,"2024-02-26":2,"2024-02-29":1,"2024-03-01":2,"2024-03-04":2,"2024-03-05":2,"2024-03-07":2,"2024-03-14":3,"2024-03-15":2,"2024-03-16":1,"2024-03-18":1,"2024-03-19":3,"2024-03-25":1,"2024-03-26":1,"2024-03-27":1,"2024-03-29":1,"2024-04-01":3,"2024-04-02":2,"2024-04-03":3,"2024-04-04":1,"2024-04-05":1,"2024-04-08":4,"2024-04-09":1,"2024-04-15":1,"2024-04-16":1,"2024-04-18":3,"2024-04-19":1,"2024-04-22":1,"2024-04-24":2,"2024-04-25":3,"2024-05-06":1,"2024-05-08":2,"2024-05-09":1,"2024-05-13":1,"2024-05-16":1,"2024-05-17":1,"2024-05-18":1,"2024-05-20":2,"2024-05-21":3,"2024-05-23":1,"2024-05-28":1,"2024-05-30":1,"2024-05-31":2,"2024-06-06":1,"2024-06-07":1,"2024-06-09":1,"2024-06-10":1,"2024-06-11":1,"2024-07-02":1,"2024-07-17":1,"2024-07-14":1,"2024-07-22":1,"2024-07-25":1,"2024-07-29":2,"2024-07-30":1,"2024-07-31":1,"2024-04-05":1,"2024-04-07":1,"2024-04-04":3,"2024-04-09":1,"2024-04-15":1,"2024-04-16":1,"2024-04-22":3,"2024-04-26":1,"2024-04-27":1,"2024-04-28":1,"2024-09-02":1,"2024-09-04":3,"2024-09-05":2,"2024-09-06":1,"2024-09-10":1,"2024-09-11":1,"2024-09-17":1,"2024-09-18":1,"2024-09-23":1,"2024-09-26":3,"2024-09-27":1,"2024-09-30":1,"2024-10-01":1,"2024-10-04":1,"2024-10-07":2,"2024-10-09":3,"2024-10-10":1,"2024-10-14":1,"2024-10-15":1,"2024-10-16":1,"2024-10-21":1,"2024-10-28":1,"2024-10-29":1,"2024-10-30":1,"2024-11-06":2,"2024-11-08":1,"2024-11-12":1,"2024-11-13":1,"2024-11-19":2,"2024-11-20":1,"2024-11-21":1,"2024-11-25":1,"2024-11-26":2,"2024-11-27":1,"2024-12-02":1,"2024-12-04":2,"2024-12-05":1,"2024-12-12":1,"2024-12-19":1,"2025-01-02":1,"2025-01-13":2,"2025-01-16":3,"2025-01-21":1,"2025-01-24":1,"2025-01-27":2,"2025-01-29":1,"2025-02-04":1,"2025-02-06":1,"2025-02-20":1,"2025-02-24":1,"2025-02-25":3,"2025-02-26":2,"2025-02-27":2,"2025-02-28":1,"2025-03-06":1,"2025-03-07":2,"2025-03-12":1,"2025-03-14":2,"2025-03-17":1,"2025-03-25":1,"2025-03-26":1,"2025-03-31":1,"2025-04-01":2,"2025-04-09":1,"2025-04-16":1,"2025-04-18":1,"2025-04-21":1,"2025-04-24":1,"2025-04-25":1,"2025-04-28":2,"2025-04-29":3,"2025-05-04":1,"2025-05-05":1,"2025-05-06":3,"2025-05-12":2,"2025-05-15":1,"2025-05-20":1,"2025-05-21":1,"2025-05-25":1,"2025-05-26":1,"2025-05-28":2,"2025-05-29":1,"2025-05-30":2,"2025-06-02":4,"2025-06-04":2,"2025-06-05":2,"2025-06-04":1,"2025-06-09":3,"2025-06-10":3,"2025-06-11":1,"2025-06-12":2,"2025-06-13":1,"2025-06-16":2,"2025-06-17":4,"2025-06-14":1,"2025-06-19":1,"2025-06-20":2,"2025-06-23":1,"2025-06-24":1,"2025-06-25":1,"2025-06-26":2,"2025-06-30":2,"2025-07-01":1,"2025-07-02":1,"2025-07-03":2,"2025-07-04":2,"2025-07-10":2,"2025-07-15":3,"2025-07-16":1,"2025-07-17":1,"2025-07-14":1,"2025-07-20":1,"2025-07-21":1,"2025-07-22":2,"2025-07-23":2,"2025-07-25":1,"2025-07-26":1,"2025-07-28":1,"2025-07-29":2,"2025-04-01":1,"2025-04-04":2,"2025-04-05":1,"2025-04-04":1,"2025-04-11":3,"2025-04-12":4,"2025-04-13":2,"2025-04-15":2,"2025-04-21":2,"2025-04-26":3,"2025-04-27":1,"2025-04-28":1,"2025-04-29":3,"2025-09-02":2,"2025-09-03":3,"2025-09-05":1,"2025-09-03":2,"2025-09-04":1,"2025-09-09":1,"2025-09-10":1,"2025-09-11":2,"2025-09-12":3,"2025-09-14":1,"2025-09-15":1,"2025-09-17":2,"2025-09-18":2,"2025-09-22":1,"2025-09-24":2,"2025-09-25":1,"2025-09-29":2,"2025-09-30":4,"2025-10-02":4,"2025-10-03":1,"2025-10-06":3,"2025-10-07":2,"2025-10-08":2,"2025-10-09":4,"2025-10-10":1,"2025-10-14":4,"2025-10-15":1,"2025-10-20":2,"2025-10-21":1,"2025-10-22":1,"2025-10-23":2,"2025-10-24":1,"2025-10-26":1,"2025-10-27":2,"2025-10-29":3,"2025-10-30":1,"2025-11-03":3,"2025-11-04":2,"2025-11-05":4,"2025-11-06":2,"2025-11-07":1,"2025-11-12":4,"2025-11-13":2,"2025-11-14":1,"2025-11-17":2,"2025-11-18":2,"2025-11-20":4,"2025-11-21":1,"2025-11-24":3,"2025-11-25":2,"2025-11-26":1,"2025-11-30":1,"2025-12-01":1,"2025-12-03":2,"2025-12-04":2,"2025-12-05":2,"2025-12-09":1,"2025-12-11":3,"2025-12-12":2,"2025-12-15":2,"2025-12-16":3,"2025-12-18":4,"2025-12-19":1,"2025-12-23":1,"2026-01-03":2,"2026-01-05":4,"2026-01-07":3,"2026-01-08":3,"2026-01-09":1,"2026-01-12":3,"2026-01-13":2,"2026-01-14":5,"2026-01-15":2,"2026-01-16":1,"2026-01-19":1,"2026-01-20":1,"2026-01-21":2,"2026-01-22":2,"2026-01-23":1,"2026-01-24":1,"2026-01-25":1,"2026-01-26":3,"2026-01-27":3,"2026-01-28":7,"2026-01-29":1,"2026-01-30":3,"2026-02-02":1,"2026-02-06":4,"2026-02-07":1,"2026-02-10":3,"2026-02-11":5,"2026-02-12":1,"2026-02-13":3,"2026-02-16":1,"2026-02-17":4,"2026-02-14":6,"2026-02-19":1,"2026-02-20":2,"2026-02-23":5,"2026-02-24":2,"2026-02-25":6,"2026-02-26":6,"2026-02-27":4,"2026-03-02":2,"2026-03-03":3,"2026-03-04":2,"2026-03-05":5,"2026-03-06":1,"2026-03-07":1,"2026-03-09":8,"2026-03-10":3,"2026-03-11":2,"2026-03-12":1,"2026-03-13":2,"2026-03-14":2,"2026-03-15":1,"2026-03-16":3,"2026-03-17":4,"2026-03-18":4,"2026-03-19":3,"2026-03-20":6,"2026-03-23":1,"2026-03-24":3,"2026-03-25":5,"2026-03-26":4,"2026-03-27":7,"2026-03-24":1,"2026-03-29":1,"2026-03-30":8,"2026-03-31":8,"2026-04-01":5,"2026-04-02":3,"2026-04-03":3,"2026-04-06":5,"2026-04-07":3,"2026-04-08":3,"2026-04-09":3,"2026-04-10":3,"2026-04-13":1,"2026-04-14":1,"2026-04-15":2,"2026-04-17":3,"2026-04-19":1,"2026-04-21":1,"2026-12-31":1};
+
+// ========== UTILITIES ==========
+function filterData(data, startStr, endStr) {
+  const result = {};
+  for (const [date, count] of Object.entries(data)) {
+    if (date >= startStr && date <= endStr) {
+      result[date] = count;
+    }
+  }
+  return result;
+}
+
+function sumValues(obj) {
+  return Object.values(obj).reduce((a, b) => a + b, 0);
+}
+
+function daysBetween(startStr, endStr) {
+  const s = new Date(startStr + 'T00:00:00');
+  const e = new Date(endStr + 'T00:00:00');
+  return Math.max(1, Math.round((e - s) / 86400000) + 1);
+}
+
+function toYMD(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function getMonthKey(dateStr) {
+  return dateStr.slice(0, 7); // "YYYY-MM"
+}
+
+function formatMonth(ym) {
+  const [y, m] = ym.split('-');
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[parseInt(m) - 1] + ' ' + y;
+}
+
+function daysInMonthRange(ym, startStr, endStr) {
+  const mStart = ym + '-01';
+  const y = parseInt(ym.split('-')[0]);
+  const m = parseInt(ym.split('-')[1]);
+  const lastDay = new Date(y, m, 0).getDate();
+  const mEnd = ym + '-' + String(lastDay).padStart(2, '0');
+  const effStart = mStart > startStr ? mStart : startStr;
+  const effEnd = mEnd < endStr ? mEnd : endStr;
+  if (effStart > effEnd) return 0;
+  return daysBetween(effStart, effEnd);
+}
+
+// ========== CHART SETUP ==========
+const commonChartOptions = (color) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1f2b47',
+      borderColor: '#2a3a5c',
+      borderWidth: 1,
+      titleColor: '#e8e8f0',
+      bodyColor: '#9a9ab8',
+      padding: 10,
+      cornerRadius: 6,
+      titleFont: { weight: '600', size: 13 },
+      bodyFont: { size: 12 },
+    }
+  },
+  scales: {
+    x: {
+      type: 'time',
+      time: { unit: 'day', tooltipFormat: 'MMM d, yyyy' },
+      grid: { color: 'rgba(42,58,92,0.5)', drawBorder: false },
+      ticks: { color: '#6a6a8a', font: { size: 11 }, maxTicksLimit: 20 },
+      border: { display: false }
+    },
+    y: {
+      beginAtZero: true,
+      grid: { color: 'rgba(42,58,92,0.4)', drawBorder: false },
+      ticks: { color: '#6a6a8a', font: { size: 11 }, stepSize: 1 },
+      border: { display: false }
+    }
+  }
+});
+
+const demosCtx = document.getElementById('demosChart').getContext('2d');
+const demosChart = new Chart(demosCtx, {
+  type: 'bar',
+  data: {
+    datasets: [{
+      label: 'Demos Booked',
+      data: [],
+      backgroundColor: 'rgba(74,158,255,0.7)',
+      hoverBackgroundColor: 'rgba(74,158,255,0.95)',
+      borderRadius: 3,
+      borderSkipped: false,
+      maxBarThickness: 12,
+    }]
+  },
+  options: commonChartOptions('#4a9eff')
+});
+
+const dealsCtx = document.getElementById('dealsChart').getContext('2d');
+const dealsChart = new Chart(dealsCtx, {
+  type: 'bar',
+  data: {
+    datasets: [{
+      label: 'Deals Signed',
+      data: [],
+      backgroundColor: 'rgba(0,214,143,0.7)',
+      hoverBackgroundColor: 'rgba(0,214,143,0.95)',
+      borderRadius: 3,
+      borderSkipped: false,
+      maxBarThickness: 12,
+    }]
+  },
+  options: commonChartOptions('#00d68f')
+});
+
+// ========== STATE ==========
+const allDemoDates = Object.keys(demosByDay);
+const allDealDates = Object.keys(dealsByDay);
+const allDates = [...new Set([...allDemoDates, ...allDealDates])].sort();
+const globalMin = allDates[0];
+const globalMax = allDates[allDates.length - 1];
+
+const startInput = document.getElementById('startDate');
+const endInput = document.getElementById('endDate');
+
+startInput.value = globalMin;
+endInput.value = globalMax;
+
+// ========== UPDATE FUNCTION ==========
+function updateDashboard() {
+  const startStr = startInput.value;
+  const endStr = endInput.value;
+
+  const filteredDemos = filterData(demosByDay, startStr, endStr);
+  const filteredDeals = filterData(dealsByDay, startStr, endStr);
+
+  const totalDemos = sumValues(filteredDemos);
+  const totalDeals = sumValues(filteredDeals);
+  const numDays = daysBetween(startStr, endStr);
+  const conversionRate = totalDemos > 0 ? ((totalDeals / totalDemos) * 100) : 0;
+  const avgDemos = totalDemos / numDays;
+  const avgDeals = totalDeals / numDays;
+
+  // Update KPIs
+  document.getElementById('kpiDemos').textContent = totalDemos.toLocaleString();
+  document.getElementById('kpiDemosSub').textContent = Object.keys(filteredDemos).length + ' active days';
+  document.getElementById('kpiDeals').textContent = totalDeals.toLocaleString();
+  document.getElementById('kpiDealsSub').textContent = Object.keys(filteredDeals).length + ' active days';
+  document.getElementById('kpiConversion').textContent = conversionRate.toFixed(1) + '%';
+  document.getElementById('kpiAvgDemos').textContent = avgDemos.toFixed(1);
+  document.getElementById('kpiAvgDemosSub').textContent = 'over ' + numDays + ' days';
+  document.getElementById('kpiAvgDeals').textContent = avgDeals.toFixed(2);
+  document.getElementById('kpiAvgDealsSub').textContent = 'over ' + numDays + ' days';
+
+  // Update charts
+  const demoChartData = Object.entries(filteredDemos).map(([d, v]) => ({ x: d, y: v }));
+  const dealChartData = Object.entries(filteredDeals).map(([d, v]) => ({ x: d, y: v }));
+
+  demosChart.data.datasets[0].data = demoChartData;
+  dealsChart.data.datasets[0].data = dealChartData;
+
+  // Adjust time unit based on range
+  const rangeDays = numDays;
+  let timeUnit = 'day';
+  if (rangeDays > 365) timeUnit = 'month';
+  else if (rangeDays > 120) timeUnit = 'week';
+  demosChart.options.scales.x.time.unit = timeUnit;
+  dealsChart.options.scales.x.time.unit = timeUnit;
+
+  // Adjust bar thickness
+  const barThick = rangeDays > 200 ? 6 : rangeDays > 90 ? 8 : 12;
+  demosChart.data.datasets[0].maxBarThickness = barThick;
+  dealsChart.data.datasets[0].maxBarThickness = barThick;
+
+  demosChart.update();
+  dealsChart.update();
+
+  // Badge totals
+  document.getElementById('demosChartBadge').textContent = totalDemos.toLocaleString() + ' total';
+  document.getElementById('dealsChartBadge').textContent = totalDeals.toLocaleString() + ' total';
+
+  // Monthly rollup table
+  const months = new Set();
+  Object.keys(filteredDemos).forEach(d => months.add(getMonthKey(d)));
+  Object.keys(filteredDeals).forEach(d => months.add(getMonthKey(d)));
+  const sortedMonths = [...months].sort();
+
+  let tableHTML = '';
+  let totalDemosTable = 0, totalDealsTable = 0;
+
+  for (const ym of sortedMonths) {
+    const mDemos = Object.entries(filteredDemos)
+      .filter(([d]) => getMonthKey(d) === ym)
+      .reduce((s, [, v]) => s + v, 0);
+    const mDeals = Object.entries(filteredDeals)
+      .filter(([d]) => getMonthKey(d) === ym)
+      .reduce((s, [, v]) => s + v, 0);
+    const mDays = daysInMonthRange(ym, startStr, endStr);
+    const mConv = mDemos > 0 ? ((mDeals / mDemos) * 100).toFixed(1) + '%' : 'â';
+    const mAvgD = (mDemos / mDays).toFixed(1);
+    const mAvgDl = (mDeals / mDays).toFixed(2);
+
+    totalDemosTable += mDemos;
+    totalDealsTable += mDeals;
+
+    tableHTML += '<tr>';
+    tableHTML += '<td>' + formatMonth(ym) + '</td>';
+    tableHTML += '<td class="td-blue">' + mDemos.toLocaleString() + '</td>';
+    tableHTML += '<td class="td-green">' + mDeals.toLocaleString() + '</td>';
+    tableHTML += '<td class="td-purple">' + mConv + '</td>';
+    tableHTML += '<td>' + mAvgD + '</td>';
+    tableHTML += '<td>' + mAvgDl + '</td>';
+    tableHTML += '</tr>';
+  }
+
+  document.getElementById('monthlyBody').innerHTML = tableHTML;
+
+  const footConv = totalDemosTable > 0 ? ((totalDealsTable / totalDemosTable) * 100).toFixed(1) + '%' : 'â';
+  document.getElementById('monthlyFoot').innerHTML =
+    '<tr>' +
+    '<td>Total</td>' +
+    '<td class="td-blue">' + totalDemosTable.toLocaleString() + '</td>' +
+    '<td class="td-green">' + totalDealsTable.toLocaleString() + '</td>' +
+    '<td class="td-purple">' + footConv + '</td>' +
+    '<td>' + (totalDemosTable / numDays).toFixed(1) + '</td>' +
+    '<td>' + (totalDealsTable / numDays).toFixed(2) + '</td>' +
+    '</tr>';
+}
+
+// ========== EVENT LISTENERS ==========
+startInput.addEventListener('change', () => {
+  clearActivePreset();
+  updateDashboard();
+});
+endInput.addEventListener('change', () => {
+  clearActivePreset();
+  updateDashboard();
+});
+
+function clearActivePreset() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+}
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    clearActivePreset();
+    btn.classList.add('active');
+
+    const today = new Date('2026-04-21');
+    let start, end = today;
+
+    switch (btn.dataset.preset) {
+      case '7d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 6);
+        break;
+      case 'wtd': {
+        // Week starts Monday
+        const dow = today.getDay(); // 0=Sun
+        const daysSinceMon = dow === 0 ? 6 : dow - 1;
+        start = new Date(today);
+        start.setDate(start.getDate() - daysSinceMon);
+        break;
+      }
+      case 'mtd':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        break;
+      case '30d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 29);
+        break;
+      case 'prevmonth': {
+        const pm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        start = pm;
+        end = new Date(today.getFullYear(), today.getMonth(), 0); // last day of prev month
+        break;
+      }
+      case '90d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 89);
+        break;
+      case '6m':
+        start = new Date(today);
+        start.setMonth(start.getMonth() - 6);
+        break;
+      case 'ytd':
+        start = new Date('2026-01-01');
+        break;
+      case 'all':
+        start = new Date(globalMin + 'T00:00:00');
+        break;
+    }
+
+    startInput.value = toYMD(start);
+    endInput.value = toYMD(end);
+    updateDashboard();
+  });
+});
+
+// Initial render
+updateDashboard();
+</script>
+</body>
+</html>
