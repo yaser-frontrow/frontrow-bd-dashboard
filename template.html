@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FrontrowMD â Business Development Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #1f2b47;
+    --bg-input: #253352;
+    --text-primary: #e8e8f0;
+    --text-secondary: #9a9ab8;
+    --text-muted: #6a6a8a;
+    --accent-blue: #4a9eff;
+    --accent-green: #00d68f;
+    --accent-purple: #a855f7;
+    --accent-orange: #f59e0b;
+    --accent-pink: #ec4899;
+    --border-color: #2a3a5c;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 32px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-left h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+  }
+  .header-left h1 span { color: var(--accent-blue); }
+  .header-left p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-bar label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .filter-bar input[type="date"] {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .filter-bar input[type="date"]:focus {
+    border-color: var(--accent-blue);
+  }
+  .filter-bar input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+  .preset-buttons {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+    flex-wrap: wrap;
+  }
+  .preset-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .preset-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+  }
+  .preset-btn.active {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: #fff;
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+  }
+  .kpi-card.blue::before { background: var(--accent-blue); }
+  .kpi-card.green::before { background: var(--accent-green); }
+  .kpi-card.purple::before { background: var(--accent-purple); }
+  .kpi-card.orange::before { background: var(--accent-orange); }
+  .kpi-card.pink::before { background: var(--accent-pink); }
+
+  .kpi-card .kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .kpi-card .kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+  .kpi-card.blue .kpi-value { color: var(--accent-blue); }
+  .kpi-card.green .kpi-value { color: var(--accent-green); }
+  .kpi-card.purple .kpi-value { color: var(--accent-purple); }
+  .kpi-card.orange .kpi-value { color: var(--accent-orange); }
+  .kpi-card.pink .kpi-value { color: var(--accent-pink); }
+
+  .kpi-card .kpi-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Chart containers */
+  .chart-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .chart-wrapper h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+  .chart-wrapper h2 .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .badge-blue { background: rgba(74,158,255,0.15); color: var(--accent-blue); }
+  .badge-green { background: rgba(0,214,143,0.15); color: var(--accent-green); }
+
+  .chart-canvas-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+  }
+
+  /* Monthly table */
+  .table-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .table-wrapper h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(74,158,255,0.04); }
+  .td-blue { color: var(--accent-blue); font-weight: 600; }
+  .td-green { color: var(--accent-green); font-weight: 600; }
+  .td-purple { color: var(--accent-purple); font-weight: 600; }
+  tfoot td {
+    padding: 12px 14px;
+    font-weight: 700;
+    border-top: 2px solid var(--border-color);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 16px 0 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-container { padding: 16px; }
+    .header h1 { font-size: 20px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .chart-canvas-container { height: 220px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1><span>FrontrowMD</span> Business Development</h1>
+      <p>Pipeline and conversion metrics â updated __UPDATE_DATE__</p>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <label>Date Range</label>
+    <input type="date" id="startDate">
+    <span style="color:var(--text-muted)">to</span>
+    <input type="date" id="endDate">
+    <div class="preset-buttons">
+      <button class="preset-btn" data-preset="7d">Last 7 Days</button>
+      <button class="preset-btn" data-preset="wtd">WTD</button>
+      <button class="preset-btn" data-preset="mtd">MTD</button>
+      <button class="preset-btn" data-preset="30d">Last 30 Days</button>
+      <button class="preset-btn" data-preset="prevmonth">Prev Month</button>
+      <button class="preset-btn" data-preset="90d">Last 90 Days</button>
+      <button class="preset-btn" data-preset="6m">Last 6 Months</button>
+      <button class="preset-btn" data-preset="ytd">YTD</button>
+      <button class="preset-btn active" data-preset="all">All Time</button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total Demos Booked</div>
+      <div class="kpi-value" id="kpiDemos">â</div>
+      <div class="kpi-sub" id="kpiDemosSub"></div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Total Deals Signed</div>
+      <div class="kpi-value" id="kpiDeals">â</div>
+      <div class="kpi-sub" id="kpiDealsSub"></div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-value" id="kpiConversion">â</div>
+      <div class="kpi-sub">Deals / Demos</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Avg Demos / Day</div>
+      <div class="kpi-value" id="kpiAvgDemos">â</div>
+      <div class="kpi-sub" id="kpiAvgDemosSub"></div>
+    </div>
+    <div class="kpi-card pink">
+      <div class="kpi-label">Avg Deals / Day</div>
+      <div class="kpi-value" id="kpiAvgDeals">â</div>
+      <div class="kpi-sub" id="kpiAvgDealsSub"></div>
+    </div>
+  </div>
+
+  <!-- Demos Chart -->
+  <div class="chart-wrapper">
+    <h2>Demos Booked per Day <span class="badge badge-blue" id="demosChartBadge"></span></h2>
+    <div class="chart-canvas-container">
+      <canvas id="demosChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Deals Chart -->
+  <div class="chart-wrapper">
+    <h2>Deals Signed per Day <span class="badge badge-green" id="dealsChartBadge"></span></h2>
+    <div class="chart-canvas-container">
+      <canvas id="dealsChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Monthly Rollup Table -->
+  <div class="table-wrapper">
+    <h2>Monthly Rollup</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Demos Booked</th>
+          <th>Deals Signed</th>
+          <th>Conversion %</th>
+          <th>Avg Demos/Day</th>
+          <th>Avg Deals/Day</th>
+        </tr>
+      </thead>
+      <tbody id="monthlyBody"></tbody>
+      <tfoot id="monthlyFoot"></tfoot>
+    </table>
+  </div>
+
+  <div class="footer">FrontrowMD Dashboard â Data as of __UPDATE_DATE__</div>
+</div>
+
+<script>
+// ========== EMBEDDED DATA ==========
+const demosByDay = __DEMOS_DATA__;
+
+const dealsByDay = __DEALS_DATA__;
+
+// ========== UTILITIES ==========
+function filterData(data, startStr, endStr) {
+  const result = {};
+  for (const [date, count] of Object.entries(data)) {
+    if (date >= startStr && date <= endStr) {
+      result[date] = count;
+    }
+  }
+  return result;
+}
+
+function sumValues(obj) {
+  return Object.values(obj).reduce((a, b) => a + b, 0);
+}
+
+function daysBetween(startStr, endStr) {
+  const s = new Date(startStr + 'T00:00:00');
+  const e = new Date(endStr + 'T00:00:00');
+  return Math.max(1, Math.round((e - s) / 86400000) + 1);
+}
+
+function toYMD(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function getMonthKey(dateStr) {
+  return dateStr.slice(0, 7); // "YYYY-MM"
+}
+
+function formatMonth(ym) {
+  const [y, m] = ym.split('-');
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[parseInt(m) - 1] + ' ' + y;
+}
+
+function daysInMonthRange(ym, startStr, endStr) {
+  const mStart = ym + '-01';
+  const y = parseInt(ym.split('-')[0]);
+  const m = parseInt(ym.split('-')[1]);
+  const lastDay = new Date(y, m, 0).getDate();
+  const mEnd = ym + '-' + String(lastDay).padStart(2, '0');
+  const effStart = mStart > startStr ? mStart : startStr;
+  const effEnd = mEnd < endStr ? mEnd : endStr;
+  if (effStart > effEnd) return 0;
+  return daysBetween(effStart, effEnd);
+}
+
+// ========== CHART SETUP ==========
+const commonChartOptions = (color) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1f2b47',
+      borderColor: '#2a3a5c',
+      borderWidth: 1,
+      titleColor: '#e8e8f0',
+      bodyColor: '#9a9ab8',
+      padding: 10,
+      cornerRadius: 6,
+      titleFont: { weight: '600', size: 13 },
+      bodyFont: { size: 12 },
+    }
+  },
+  scales: {
+    x: {
+      type: 'time',
+      time: { unit: 'day', tooltipFormat: 'MMM d, yyyy' },
+      grid: { color: 'rgba(42,58,92,0.5)', drawBorder: false },
+      ticks: { color: '#6a6a8a', font: { size: 11 }, maxTicksLimit: 20 },
+      border: { display: false }
+    },
+    y: {
+      beginAtZero: true,
+      grid: { color: 'rgba(42,58,92,0.4)', drawBorder: false },
+      ticks: { color: '#6a6a8a', font: { size: 11 }, stepSize: 1 },
+      border: { display: false }
+    }
+  }
+});
+
+const demosCtx = document.getElementById('demosChart').getContext('2d');
+const demosChart = new Chart(demosCtx, {
+  type: 'bar',
+  data: {
+    datasets: [{
+      label: 'Demos Booked',
+      data: [],
+      backgroundColor: 'rgba(74,158,255,0.7)',
+      hoverBackgroundColor: 'rgba(74,158,255,0.95)',
+      borderRadius: 3,
+      borderSkipped: false,
+      maxBarThickness: 12,
+    }]
+  },
+  options: commonChartOptions('#4a9eff')
+});
+
+const dealsCtx = document.getElementById('dealsChart').getContext('2d');
+const dealsChart = new Chart(dealsCtx, {
+  type: 'bar',
+  data: {
+    datasets: [{
+      label: 'Deals Signed',
+      data: [],
+      backgroundColor: 'rgba(0,214,143,0.7)',
+      hoverBackgroundColor: 'rgba(0,214,143,0.95)',
+      borderRadius: 3,
+      borderSkipped: false,
+      maxBarThickness: 12,
+    }]
+  },
+  options: commonChartOptions('#00d68f')
+});
+
+// ========== STATE ==========
+const allDemoDates = Object.keys(demosByDay);
+const allDealDates = Object.keys(dealsByDay);
+const allDates = [...new Set([...allDemoDates, ...allDealDates])].sort();
+const globalMin = allDates[0];
+const globalMax = allDates[allDates.length - 1];
+
+const startInput = document.getElementById('startDate');
+const endInput = document.getElementById('endDate');
+
+startInput.value = globalMin;
+endInput.value = globalMax;
+
+// ========== UPDATE FUNCTION ==========
+function updateDashboard() {
+  const startStr = startInput.value;
+  const endStr = endInput.value;
+
+  const filteredDemos = filterData(demosByDay, startStr, endStr);
+  const filteredDeals = filterData(dealsByDay, startStr, endStr);
+
+  const totalDemos = sumValues(filteredDemos);
+  const totalDeals = sumValues(filteredDeals);
+  const numDays = daysBetween(startStr, endStr);
+  const conversionRate = totalDemos > 0 ? ((totalDeals / totalDemos) * 100) : 0;
+  const avgDemos = totalDemos / numDays;
+  const avgDeals = totalDeals / numDays;
+
+  // Update KPIs
+  document.getElementById('kpiDemos').textContent = totalDemos.toLocaleString();
+  document.getElementById('kpiDemosSub').textContent = Object.keys(filteredDemos).length + ' active days';
+  document.getElementById('kpiDeals').textContent = totalDeals.toLocaleString();
+  document.getElementById('kpiDealsSub').textContent = Object.keys(filteredDeals).length + ' active days';
+  document.getElementById('kpiConversion').textContent = conversionRate.toFixed(1) + '%';
+  document.getElementById('kpiAvgDemos').textContent = avgDemos.toFixed(1);
+  document.getElementById('kpiAvgDemosSub').textContent = 'over ' + numDays + ' days';
+  document.getElementById('kpiAvgDeals').textContent = avgDeals.toFixed(2);
+  document.getElementById('kpiAvgDealsSub').textContent = 'over ' + numDays + ' days';
+
+  // Update charts
+  const demoChartData = Object.entries(filteredDemos).map(([d, v]) => ({ x: d, y: v }));
+  const dealChartData = Object.entries(filteredDeals).map(([d, v]) => ({ x: d, y: v }));
+
+  demosChart.data.datasets[0].data = demoChartData;
+  dealsChart.data.datasets[0].data = dealChartData;
+
+  // Adjust time unit based on range
+  const rangeDays = numDays;
+  let timeUnit = 'day';
+  if (rangeDays > 365) timeUnit = 'month';
+  else if (rangeDays > 120) timeUnit = 'week';
+  demosChart.options.scales.x.time.unit = timeUnit;
+  dealsChart.options.scales.x.time.unit = timeUnit;
+
+  // Adjust bar thickness
+  const barThick = rangeDays > 200 ? 6 : rangeDays > 90 ? 8 : 12;
+  demosChart.data.datasets[0].maxBarThickness = barThick;
+  dealsChart.data.datasets[0].maxBarThickness = barThick;
+
+  demosChart.update();
+  dealsChart.update();
+
+  // Badge totals
+  document.getElementById('demosChartBadge').textContent = totalDemos.toLocaleString() + ' total';
+  document.getElementById('dealsChartBadge').textContent = totalDeals.toLocaleString() + ' total';
+
+  // Monthly rollup table
+  const months = new Set();
+  Object.keys(filteredDemos).forEach(d => months.add(getMonthKey(d)));
+  Object.keys(filteredDeals).forEach(d => months.add(getMonthKey(d)));
+  const sortedMonths = [...months].sort();
+
+  let tableHTML = '';
+  let totalDemosTable = 0, totalDealsTable = 0;
+
+  for (const ym of sortedMonths) {
+    const mDemos = Object.entries(filteredDemos)
+      .filter(([d]) => getMonthKey(d) === ym)
+      .reduce((s, [, v]) => s + v, 0);
+    const mDeals = Object.entries(filteredDeals)
+      .filter(([d]) => getMonthKey(d) === ym)
+      .reduce((s, [, v]) => s + v, 0);
+    const mDays = daysInMonthRange(ym, startStr, endStr);
+    const mConv = mDemos > 0 ? ((mDeals / mDemos) * 100).toFixed(1) + '%' : 'â';
+    const mAvgD = (mDemos / mDays).toFixed(1);
+    const mAvgDl = (mDeals / mDays).toFixed(2);
+
+    totalDemosTable += mDemos;
+    totalDealsTable += mDeals;
+
+    tableHTML += '<tr>';
+    tableHTML += '<td>' + formatMonth(ym) + '</td>';
+    tableHTML += '<td class="td-blue">' + mDemos.toLocaleString() + '</td>';
+    tableHTML += '<td class="td-green">' + mDeals.toLocaleString() + '</td>';
+    tableHTML += '<td class="td-purple">' + mConv + '</td>';
+    tableHTML += '<td>' + mAvgD + '</td>';
+    tableHTML += '<td>' + mAvgDl + '</td>';
+    tableHTML += '</tr>';
+  }
+
+  document.getElementById('monthlyBody').innerHTML = tableHTML;
+
+  const footConv = totalDemosTable > 0 ? ((totalDealsTable / totalDemosTable) * 100).toFixed(1) + '%' : 'â';
+  document.getElementById('monthlyFoot').innerHTML =
+    '<tr>' +
+    '<td>Total</td>' +
+    '<td class="td-blue">' + totalDemosTable.toLocaleString() + '</td>' +
+    '<td class="td-green">' + totalDealsTable.toLocaleString() + '</td>' +
+    '<td class="td-purple">' + footConv + '</td>' +
+    '<td>' + (totalDemosTable / numDays).toFixed(1) + '</td>' +
+    '<td>' + (totalDealsTable / numDays).toFixed(2) + '</td>' +
+    '</tr>';
+}
+
+// ========== EVENT LISTENERS ==========
+startInput.addEventListener('change', () => {
+  clearActivePreset();
+  updateDashboard();
+});
+endInput.addEventListener('change', () => {
+  clearActivePreset();
+  updateDashboard();
+});
+
+function clearActivePreset() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+}
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    clearActivePreset();
+    btn.classList.add('active');
+
+    const today = new Date();
+    let start, end = today;
+
+    switch (btn.dataset.preset) {
+      case '7d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 6);
+        break;
+      case 'wtd': {
+        // Week starts Monday
+        const dow = today.getDay(); // 0=Sun
+        const daysSinceMon = dow === 0 ? 6 : dow - 1;
+        start = new Date(today);
+        start.setDate(start.getDate() - daysSinceMon);
+        break;
+      }
+      case 'mtd':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        break;
+      case '30d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 29);
+        break;
+      case 'prevmonth': {
+        const pm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        start = pm;
+        end = new Date(today.getFullYear(), today.getMonth(), 0); // last day of prev month
+        break;
+      }
+      case '90d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 89);
+        break;
+      case '6m':
+        start = new Date(today);
+        start.setMonth(start.getMonth() - 6);
+        break;
+      case 'ytd':
+        start = new Date(today.getFullYear() + '-01-01');
+        break;
+      case 'all':
+        start = new Date(globalMin + 'T00:00:00');
+        break;
+    }
+
+    startInput.value = toYMD(start);
+    endInput.value = toYMD(end);
+    updateDashboard();
+  });
+});
+
+// Initial render
+updateDashboard();
+</script>
+</body>
+</html>
